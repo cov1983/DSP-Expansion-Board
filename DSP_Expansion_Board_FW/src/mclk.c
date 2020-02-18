@@ -89,11 +89,40 @@ int HBU_TEMPLATE_SomeGlobalFunction(int someInt, double someDouble)
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
 
-void initMCLK(void)
+void enableMCLK(void)
 {
+	/* Select HFRCO as source for CMU_CLK0 pin */
+	CMU->CTRL =(CMU->CTRL &~_CMU_CTRL_CLKOUTSEL0_MASK)| CMU_CTRL_CLKOUTSEL0_HFRCO;
 
+	/* Enable routing of CMU_CLK0 on location #2 (PD7)  */
+	CMU->ROUTE = CMU_ROUTE_LOCATION_LOC2 | CMU_ROUTE_CLKOUT0PEN;
+
+	/* Enable GPIO clock */
+	CMU_ClockEnable (cmuClock_GPIO,true);
+
+	/* Configure PD7 as push-pull output */
+	GPIO_PinModeSet(gpioPortD,7, gpioModePushPull ,0);
 }
 
+//--------------------------------------------------------------------------------------------------
+// SomeModuleFunction
+//--------------------------------------------------------------------------------------------------
+//! \brief	A brief explanation of this function's functionality goes here.
+//!
+//! A more detailed explanation of this function's functionality goes here,
+//! which may go over several lines.
+//!
+//! \param	someInt		input	Description of parameter someInt
+//! \param	someDouble	input	Description of parameter someDouble
+//! \return	Description of the return value
+//! 		-  0 = Nothing
+//! 		- >0 = Number of something
+//--------------------------------------------------------------------------------------------------
+void disableMCLK(void)
+{
+	/* Enable GPIO clock */
+	CMU_ClockEnable (cmuClock_GPIO,false);
+}
 
 //==================================================================================================
 //  E N D   O F   F I L E

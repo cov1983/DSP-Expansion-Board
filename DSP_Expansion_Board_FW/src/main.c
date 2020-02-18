@@ -82,8 +82,8 @@ int main(void)
 	// Apply chip errata:
 	CHIP_Init();
 
-	// Call entry function
-	initMCLK();
+	// Enable HFRCO Clock on Pin PD7
+	disableMCLK();
 
 	return (0);
 }
