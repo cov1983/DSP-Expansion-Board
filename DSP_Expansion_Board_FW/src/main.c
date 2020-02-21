@@ -25,13 +25,13 @@
 //==================================================================================================
 
 #include "em_device.h" 	// Includes the MCU dependent headers based on the project's MCU definition.
-
 #include "em_chip.h"   	// emlib chip errata.
 
-#include "em_cmu.h"    	// emlib CMU (clock management unit) functionality.
-#include "em_gpio.h"   	// emlib GPIO (general purpose I/O) functionality.
+#include "clocks.h"		// Include Clocks Module
+#include "buttons.h"	// Include Buttons Module
+#include "i2c.h"		// Include I2C Module
+#include "leds.h"		// Include LEDs Module
 
-#include "mclk.h"		// Include MCKL Module
 
 //==================================================================================================
 //  M O D U L E   D E F I N E S
@@ -46,6 +46,8 @@
 //==================================================================================================
 //  M O D U L E   V A R I A B L E S
 //==================================================================================================
+
+bool i2cRepeat = false;
 
 
 //==================================================================================================
@@ -81,9 +83,49 @@ int main(void)
 {
 	// Apply chip errata:
 	CHIP_Init();
+	// Initialize Clocks
+	InitClk();
+	// Initialize Push Buttons
+	initButtons();
+	// Initialize LEDs
+	initLEDS();
+	// Initialize I2C
+	initI2C();
 
-	// Enable HFRCO Clock on Pin PD7
-	disableMCLK();
+	while (true)
+	{
+		// Check if PB0 Button is activated
+		if (GetButtonPB0Flag())
+		{
+			// Enable HFRCO Clock on Pin PD7
+			enableMCLK();
+		}
+		else {
+			// Disable HFRCO Clock on Pin PD7
+			disableMCLK();
+		}
+
+		// Check if PB1 Button is activated
+		if (GetButtonPB1Flag())
+		{
+			// Enable LED0
+			enableLED0();
+
+			//I2c Test Transfer
+			if (!i2cRepeat)
+			{
+				// LED1 Should turn ON during Transfer
+				performI2CTransfer();
+				i2cRepeat = true;
+			}
+		}
+		else {
+			// Disable LED0
+			disableLED0();
+			// Reset i2cRepeat Flag, with the next press of PB1 a new trasfer will start
+			i2cRepeat = false;
+		}
+	}
 
 	return (0);
 }
