@@ -31,6 +31,7 @@
 #include "buttons.h"	// Include Buttons Module
 #include "i2c.h"		// Include I2C Module
 #include "leds.h"		// Include LEDs Module
+#include "codec.h"		// Include Codec Module
 
 
 //==================================================================================================
@@ -49,6 +50,7 @@
 
 bool i2cRepeat = false;
 
+bool i2cError = false;
 
 //==================================================================================================
 //  F O R W A R D   D E C L A R A T I O N S
@@ -114,15 +116,17 @@ int main(void)
 			//I2c Test Transfer
 			if (!i2cRepeat)
 			{
-				// LED1 Should turn ON during Transfer
-				performI2CTransfer();
+				// CODEC Configuration Test Block
+				i2cError = initCODEC();
+
+				// Set Repeat Flag
 				i2cRepeat = true;
 			}
 		}
 		else {
 			// Disable LED0
 			disableLED0();
-			// Reset i2cRepeat Flag, with the next press of PB1 a new trasfer will start
+			// Reset i2cRepeat Flag, with the next press of PB1 a new transfer will start
 			i2cRepeat = false;
 		}
 	}
