@@ -33,9 +33,11 @@
 //==================================================================================================
 
 #define CORE_FREQUENCY		48000000
+#define I2C_RXBUFFER_SIZE	10
+
+// I2C ADRESS -> JUST FOR TESTING
 #define I2C_CODEC_ADRESS	0x18
 #define I2C_IOEXT_ADRESS	0x24
-#define I2C_RXBUFFER_SIZE	10
 
 //==================================================================================================
 //  M O D U L E   T Y P E S
@@ -45,16 +47,16 @@
 //  M O D U L E   V A R I A B L E S
 //==================================================================================================
 
-// TX Test Buffer, this should be replaced with the right parameters !
-uint8_t i2c_txBuffer[] = "DSP EXPANSION BOARD";
-// TX Buffer Size
+// TX Test Buffer - JUST USED FOR TESTING EMBLIB
+uint8_t i2c_txBuffer[] = "I2C TEST";
+
+// TX Test Buffer Size - JUST USED FOR TESTING EMBLIB
 uint8_t i2c_txBufferSize = sizeof(i2c_txBuffer);
 
-// RX Buffer
+// RX Buffer - NEEDED IF SLAVE FUNCTION IS ACTIVE
 uint8_t i2c_rxBuffer[I2C_RXBUFFER_SIZE];
 
-
-// RX Buffer Index
+// RX Buffer Index - NEEDED IF SLAVE FUNCTION IS ACTIVE
 uint8_t i2c_rxBufferIndex;
 
 // Transmission Flags
@@ -64,8 +66,6 @@ volatile bool i2c_startTx;
 //==================================================================================================
 //  M O D U L E   F U N C T I O N   P R O T O T Y P E S
 //==================================================================================================
-static void enableI2cSlaveInterrupts(void);
-static void disableI2cInterrupts(void);
 
 //==================================================================================================
 //  I R Q   H A N D L E R S
@@ -74,7 +74,7 @@ static void disableI2cInterrupts(void);
 //--------------------------------------------------------------------------------------------------
 // void I2C_IRQHandler()
 //--------------------------------------------------------------------------------------------------
-//! \brief	Handles I2C events from Slaves.
+//! \brief	Handles I2C Data IN if Slave Functionality is Active.
 //!
 //!
 //! \param	void		input	No input arguments
@@ -116,7 +116,7 @@ void I2C1_IRQHandler(void)
 //==================================================================================================
 
 //--------------------------------------------------------------------------------------------------
-// SomeGlobalFunction
+// void initI2C(void)
 //--------------------------------------------------------------------------------------------------
 //! \brief	A brief explanation of this function's functionality goes here.
 //!
@@ -159,9 +159,9 @@ void initI2C(void)
 }
 
 //--------------------------------------------------------------------------------------------------
-// SomeGlobalFunction
+// void performI2CTransfer(void)
 //--------------------------------------------------------------------------------------------------
-//! \brief	A brief explanation of this function's functionality goes here.
+//! \brief	Handles I2C Data Bidirectional Transfer [MASTER <-> SLAVE].
 //!
 //! A more detailed explanation of this function's functionality goes here,
 //! which may go over several lines.
@@ -202,12 +202,8 @@ void performI2CTransfer(void)
   //enableI2cSlaveInterrupts();
 }
 
-//==================================================================================================
-//  M O D U L E   F U N C T I O N   I M P L E M E N T A T I O N
-//==================================================================================================
-
 //--------------------------------------------------------------------------------------------------
-// SomeModuleFunction
+// int8_t I2Cwrite(uint8_t addr, uint8_t* data, uint8_t len)
 //--------------------------------------------------------------------------------------------------
 //! \brief	A brief explanation of this function's functionality goes here.
 //!
@@ -220,7 +216,55 @@ void performI2CTransfer(void)
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-static void enableI2cSlaveInterrupts(void)
+int8_t I2Cwrite(uint8_t addr, uint8_t* data, uint8_t len)
+{
+	// Transfer structure
+	I2C_TransferSeq_TypeDef i2cWrite;
+	I2C_TransferReturn_TypeDef i2cState;
+
+	// Setting LED1 to indicate transfer
+	enableLED1();
+
+	// Initializing I2C transfer
+	i2cWrite.addr          = addr;
+	i2cWrite.flags         = I2C_FLAG_WRITE;
+	i2cWrite.buf[0].data   = data;
+	i2cWrite.buf[0].len    = len;
+	i2cWrite.buf[1].data   = i2c_rxBuffer;
+	i2cWrite.buf[1].len    = I2C_RXBUFFER_SIZE;
+	i2cState = I2C_TransferInit(I2C1, &i2cWrite);
+
+	// Sending data, as long i2cState is 1 = in progress
+	while (i2cState == i2cTransferInProgress)
+	{
+	  i2cState = I2C_Transfer(I2C1);
+	}
+
+	// Clearing LED1 to indicate end of transfer
+	disableLED1();
+
+	// Return i2cState after Transfer
+	//  0 = DONE
+	// -1 = NACK
+	// -2 = BUS ERROR
+	return i2cState;
+}
+
+//--------------------------------------------------------------------------------------------------
+// void enableI2cSlaveInterrupts(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	Enable I2C Data IN Interrupts for Slave Functionality.
+//!
+//! A more detailed explanation of this function's functionality goes here,
+//! which may go over several lines.
+//!
+//! \param	someInt		input	Description of parameter someInt
+//! \param	someDouble	input	Description of parameter someDouble
+//! \return	Description of the return value
+//! 		-  0 = Nothing
+//! 		- >0 = Number of something
+//--------------------------------------------------------------------------------------------------
+void enableI2cSlaveInterrupts(void)
 {
   I2C_IntClear(I2C0, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_SSTOP);
   I2C_IntEnable(I2C0, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_SSTOP);
@@ -228,9 +272,9 @@ static void enableI2cSlaveInterrupts(void)
 }
 
 //--------------------------------------------------------------------------------------------------
-// SomeModuleFunction
+// void disableI2cSlaveInterrupts(void)
 //--------------------------------------------------------------------------------------------------
-//! \brief	A brief explanation of this function's functionality goes here.
+//! \brief	Disable I2C Data IN Interrupts for Slave Functionality.
 //!
 //! A more detailed explanation of this function's functionality goes here,
 //! which may go over several lines.
@@ -241,7 +285,7 @@ static void enableI2cSlaveInterrupts(void)
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-static void disableI2cInterrupts(void)
+void disableI2cSlaveInterrupts(void)
 {
   NVIC_DisableIRQ(I2C0_IRQn);
   I2C_IntDisable(I2C0, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_SSTOP);

@@ -22,7 +22,6 @@
 #ifndef I2C_H
 #define I2C_H
 
-
 //==================================================================================================
 //  I N C L U D E D   F I L E S
 //==================================================================================================
@@ -52,6 +51,10 @@ extern "C" {
 //==================================================================================================
 void initI2C(void);
 void performI2CTransfer(void);
+int8_t I2Cwrite(uint8_t addr, uint8_t* data, uint8_t len);
+
+void enableI2cSlaveInterrupts(void);
+void disableI2cSlaveInterrupts(void);
 
 
 #ifdef __cplusplus
