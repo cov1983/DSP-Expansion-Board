@@ -26,7 +26,7 @@ Here the embedded Audio functionalities :
    
 And here a first look at the DSP Expansion Board :  
 
-![DSP Expansion Board](images/DSP_Expansion_Board_V00_Topview.jpg) 
+![DSP Expansion Board](images/DSP_Expansion_Board_V00_Topview.png) 
 
 
 
