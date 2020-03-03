@@ -155,6 +155,9 @@ void initButtons(void)
 	// PB1: enable interrupts on falling edge
 	GPIO_IntConfig( gpioPortB, PB1PIN, false, true, true );
 
+	// IOExpander Interrupt Pin : input with pull R
+	GPIO_PinModeSet(gpioPortC, IOEXPINTPIN, gpioModeInputPull, HIGH);
+
 	//Also enable GPIO interrupts on ARM CPU level
 	// Note:
 	//- PB0 is on an odd pin (9) it triggers thus GPIO_ODD interrupts

@@ -45,6 +45,8 @@ extern "C" {
 #define PB0PIN 9 	// PB0 is on port B pin 9
 #define PB1PIN 10	// PB1 is on port B pin 10
 
+#define IOEXPINTPIN 6 // IOExpander Interrupt on port C pin 6
+
 
 //==================================================================================================
 //  M O D U L E   T Y P E S
