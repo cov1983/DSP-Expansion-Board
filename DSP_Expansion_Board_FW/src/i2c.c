@@ -35,9 +35,9 @@
 #define CORE_FREQUENCY		48000000
 #define I2C_RXBUFFER_SIZE	10
 
-// I2C ADRESS -> JUST FOR TESTING
-#define I2C_CODEC_ADRESS	0x18
-#define I2C_IOEXT_ADRESS	0x24
+// I2C ADRESS -> JUST FOR TESTING - STANDARD = NOT ACTIVE
+#define I2C_CODEC_ADDR	0x18
+#define I2C_IOEXP_ADDR	0x24
 
 //==================================================================================================
 //  M O D U L E   T Y P E S
@@ -153,9 +153,12 @@ void initI2C(void)
   i2c_rxBufferIndex = 0;
 
   // Setting up to enable slave mode
-  I2C1->SADDR = I2C_CODEC_ADRESS;
+  // NOT ACTIVE
+  /*
+  I2C1->SADDR = I2C_IOEXP_ADDR;
   I2C1->CTRL |= I2C_CTRL_SLAVE | I2C_CTRL_AUTOACK | I2C_CTRL_AUTOSN;
   enableI2cSlaveInterrupts();
+  */
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -182,7 +185,7 @@ void performI2CTransfer(void)
   enableLED1();
 
   // Initializing I2C transfer
-  i2cTransfer.addr          = I2C_CODEC_ADRESS;
+  i2cTransfer.addr          = I2C_IOEXP_ADDR;
   i2cTransfer.flags         = I2C_FLAG_WRITE;
   i2cTransfer.buf[0].data   = i2c_txBuffer;
   i2cTransfer.buf[0].len    = i2c_txBufferSize;
