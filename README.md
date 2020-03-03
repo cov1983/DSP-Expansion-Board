@@ -26,7 +26,7 @@ Here the embedded Audio functionalities :
    
 And here a first look at the DSP Expansion Board :  
 
-![DSP Expansion Board](images/DSP_Expansion_Board_V00.png) 
+![DSP Expansion Board](images/DSP_Expansion_Board_V00_Topview.jpg) 
 
 
 
@@ -78,8 +78,8 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Task List
 
-- [ ] MCKL Implementation
-- [ ] I2C Implementation
+- [x] MCKL Implementation
+- [x] I2C Implementation
 - [ ] I2S Implementation
 - [ ] Record & Playback Implementation
 - [ ] LP FIR Filter Implementation
