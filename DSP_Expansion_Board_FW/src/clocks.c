@@ -41,13 +41,6 @@
 //  M O D U L E   T Y P E S
 //==================================================================================================
 
-//! Some module type
-typedef enum {
-	SomeModuleEnum_E1,		//!< Description of enum entry 1
-	SomeModuleEnum_E2,		//!< Description of enum entry 2
-	SomeModuleEnum_E3,		//!< Description of enum entry 3
-} SomeModuleEnum_T;
-
 
 //==================================================================================================
 //  M O D U L E   V A R I A B L E S
@@ -90,6 +83,7 @@ void InitClk(void)
 	//Enable peripheral clocks
 	CMU_ClockEnable(cmuClock_GPIO,true);
 	CMU_ClockEnable(cmuClock_I2C1, true);
+	CMU_ClockEnable(cmuClock_USART1, true);
 
 	/*
 	CMU_ClockEnable( cmuClock_TIMER0,true);
