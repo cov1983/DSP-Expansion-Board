@@ -49,7 +49,9 @@ extern "C" {
 //==================================================================================================
 //  G L O B A L   F U N C T I O N   D E C L A R A T I O N
 //==================================================================================================
-void initI2C(void);
+void enableI2C(void);
+void disableI2C(void);
+
 void performI2CTransfer(void);
 int8_t I2Cwrite(uint8_t addr, uint8_t* data, uint8_t len);
 

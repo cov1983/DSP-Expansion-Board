@@ -116,7 +116,7 @@ void I2C1_IRQHandler(void)
 //==================================================================================================
 
 //--------------------------------------------------------------------------------------------------
-// void initI2C(void)
+// void enableI2C(void)
 //--------------------------------------------------------------------------------------------------
 //! \brief	A brief explanation of this function's functionality goes here.
 //!
@@ -129,7 +129,7 @@ void I2C1_IRQHandler(void)
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initI2C(void)
+void enableI2C(void)
 {
   // Using default settings
   I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
@@ -160,6 +160,30 @@ void initI2C(void)
    I2C1->CTRL |= I2C_CTRL_SLAVE | I2C_CTRL_AUTOACK | I2C_CTRL_AUTOSN;
    enableI2cSlaveInterrupts();
    */
+}
+
+//--------------------------------------------------------------------------------------------------
+// void disableI2C(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	A brief explanation of this function's functionality goes here.
+//!
+//! A more detailed explanation of this function's functionality goes here,
+//! which may go over several lines.
+//!
+//! \param	someInt		input	Description of parameter someInt
+//! \param	someDouble	input	Description of parameter someDouble
+//! \return	Description of the return value
+//! 		-  0 = Nothing
+//! 		- >0 = Number of something
+//--------------------------------------------------------------------------------------------------
+void disableI2C(void)
+{
+	// Disable I2C interface
+	I2C_Enable(I2C1, false);
+
+	// Disable Pin SDA & SCL
+	GPIO_PinModeSet(gpioPortC, 4, gpioModeDisabled, 1);
+	GPIO_PinModeSet(gpioPortC, 5, gpioModeDisabled, 1);
 }
 
 //--------------------------------------------------------------------------------------------------
