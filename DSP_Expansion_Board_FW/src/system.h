@@ -77,8 +77,8 @@ extern "C" {
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initSTK3800_Basic(void);
-void initSTK3800_DSPInterface(void);
+void initSTK3800(void);
+void enableDSPInterface(void);
 bool initDSPBoard(void);
 
 

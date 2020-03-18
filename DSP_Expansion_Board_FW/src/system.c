@@ -71,7 +71,7 @@
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initSTK3800_Basic(void)
+void initSTK3800(void)
 {
 	// Apply chip Errata:
 	CHIP_Init();
@@ -103,14 +103,38 @@ void initSTK3800_Basic(void)
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initSTK3800_DSPInterface(void)
+void enableDSPInterface(void)
 {
-	// Initialize I2C
-	initI2C();
-	// Initialize I2S
-	initI2S();
-	// Enable MCLK Clock on Pin PD7 for CODEC
+	// Enable I2C Interface
+	enableI2C();
+	// Enable I2S Interface
+	enableI2S();
+	// Enable MCLK
 	enableMCLK();
+}
+
+//--------------------------------------------------------------------------------------------------
+// SomeGlobalFunction
+//--------------------------------------------------------------------------------------------------
+//! \brief	A brief explanation of this function's functionality goes here.
+//!
+//! A more detailed explanation of this function's functionality goes here,
+//! which may go over several lines.
+//!
+//! \param	someInt		input	Description of parameter someInt
+//! \param	someDouble	input	Description of parameter someDouble
+//! \return	Description of the return value
+//! 		-  0 = Nothing
+//! 		- >0 = Number of something
+//--------------------------------------------------------------------------------------------------
+void disableDSPInterface(void)
+{
+	// Disable I2C Interface
+	disableI2C();
+	// Disable I2S Interface
+	disableI2S();
+	// Disable MCLK
+	disableMCLK();
 }
 
 //--------------------------------------------------------------------------------------------------
