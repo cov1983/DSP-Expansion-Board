@@ -93,7 +93,7 @@ bool initIOexpander(void)
 {
 	static int8_t state = 0;
 
-	static bool errorFlag = false;
+	static bool initIOExpander = true;
 
 	state += I2Cwrite(I2C_IOEXP_ADDR, IOEXP_INIT_DIR_PORT0, 2);
 	state += I2Cwrite(I2C_IOEXP_ADDR, IOEXP_INIT_DIR_PORT1, 2);
@@ -101,9 +101,9 @@ bool initIOexpander(void)
 	state += I2Cwrite(I2C_IOEXP_ADDR, IOEXP_INIT_VAL_PORT1, 2);
 
 	// Check if I2C Write was successful, if state not 0 -> NACK OR BUS ERROR
-	if(state != 0) {errorFlag = true;}
+	if(state != 0) {initIOExpander = false;}
 
-	return errorFlag;
+	return initIOExpander;
 
 }
 
