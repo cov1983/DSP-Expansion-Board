@@ -19,8 +19,8 @@
 //! Short description of this file/module.
 //==================================================================================================
 
-#ifndef BUTTONS_H
-#define BUTTONS_H
+#ifndef DIGITAL_INPUTS_H
+#define DIGITAL_INPUTS_H
 
 
 //==================================================================================================
@@ -28,6 +28,9 @@
 //==================================================================================================
 
 #include "em_gpio.h"
+#include "em_core.h"
+
+#include <stdbool.h>
 
 //==================================================================================================
 //  S U P P O R T   F O R   M I X E D   C / C + +
@@ -45,8 +48,7 @@ extern "C" {
 #define PB0PIN 9 	// PB0 is on port B pin 9
 #define PB1PIN 10	// PB1 is on port B pin 10
 
-#define IOEXPINTPIN 6 // IOExpander Interrupt on port C pin 6
-
+#define CODEC_RST_PIN 0
 
 //==================================================================================================
 //  M O D U L E   T Y P E S
@@ -54,7 +56,8 @@ extern "C" {
 
 typedef enum logiclevels
 {
-	LOW=0, HIGH
+	LOW  = 0,
+	HIGH = 1
 } LogicLevels_t;
 
 //==================================================================================================
@@ -75,12 +78,14 @@ typedef enum logiclevels
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initButtons(void);
+void initSTK3800Buttons(void);
+bool getButtonPB1Flag(void);
+bool getButtonPB0Flag(void);
 
-bool GetButtonPB1Flag(void);
-bool GetButtonPB0Flag(void);
+void initDSPDetection(void);
+bool getDSPDetectionFlag(void);
 
-
+void enableDigitalInterrupts(void);
 
 #ifdef __cplusplus
 }

@@ -23,12 +23,8 @@
 //==================================================================================================
 //  I N C L U D E D   F I L E S
 //==================================================================================================
-#include <stdbool.h>
 
-#include "em_core.h"
-#include "em_gpio.h"   	// emlib GPIO (general purpose I/O) functionality.
-
-#include "buttons.h"
+#include "digital_inputs.h"
 
 //==================================================================================================
 //  M O D U L E   D E F I N E S
@@ -49,13 +45,18 @@
 static bool ButtonPB1Flag = false;
 static bool ButtonPB0Flag = false;
 
+static bool DSPDetectionFlag = false;
+
 //==================================================================================================
 //  M O D U L E   F U N C T I O N   P R O T O T Y P E S
 //==================================================================================================
-static void SetButtonPB1Flag(void);
-static void SetButtonPB0Flag(void);
-static void ResetButtonPB1Flag(void);
-static void ResetButtonPB0Flag(void);
+static void setButtonPB1Flag(void);
+static void setButtonPB0Flag(void);
+static void resetButtonPB1Flag(void);
+static void resetButtonPB0Flag(void);
+
+static void setDSPDetectionFlag(void);
+static void resetDSPDetectionFlag(void);
 
 //==================================================================================================
 //  I R Q   H A N D L E R S
@@ -67,7 +68,7 @@ static void ResetButtonPB0Flag(void);
 //! \brief	Handles GPIO events from even pin numbers.
 //!
 //! Handles the push button PB1 pressed event.
-//! -sets the SetSelectEventFlag flag
+//! Handles the DSP Expansion Board Detection on CODEC_RST signal
 //!
 //! \param	void		input	No input arguments
 //! \return	void		output	No output arguments
@@ -83,12 +84,30 @@ void GPIO_EVEN_IRQHandler()
 		// Toggle function for button PB1 Flag
 		if (ButtonPB1Flag)
 		{
-			// Reset the associated flag if already active (toggle)
-			ResetButtonPB1Flag();
+			// Reset the associated flag if already active
+			resetButtonPB1Flag();
 		}
 		else {
 			// Set the associated flag
-			SetButtonPB1Flag();
+			setButtonPB1Flag();
+		}
+	}
+
+	// Check if interrupt comes from CODEC_RST (Pin PC0)
+	if (GPIO->IF & (1<<CODEC_RST_PIN))
+	{
+		// Clear interrupt flag
+		GPIO->IFC = (1<<CODEC_RST_PIN);
+
+		// Check if interrupt is on Rising or Falling Edge
+		if (GPIO_PinInGet(gpioPortC, CODEC_RST_PIN))
+		{
+			// Set the associated flag
+			setDSPDetectionFlag();
+		}
+		else {
+			// Reset the associated flag
+			resetDSPDetectionFlag();
 		}
 	}
 }
@@ -112,15 +131,15 @@ void GPIO_ODD_IRQHandler()
 		// Clear interrupt flag
 		GPIO->IFC = (1<<PB0PIN);
 
-
+		// Toggle function for button PB0 Flag
 		if (ButtonPB0Flag)
 		{
-			// Reset the associated flag if already active (toggle)
-			ResetButtonPB0Flag();
+			// Reset the associated flag if already active
+			resetButtonPB0Flag();
 		}
 		else {
 			// Set the associated flag
-			SetButtonPB0Flag();
+			setButtonPB0Flag();
 		}
 	}
 }
@@ -144,33 +163,20 @@ void GPIO_ODD_IRQHandler()
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
 
-void initButtons(void)
+void initSTK3800Buttons(void)
 {
 	// PB0: input with pullup R
 	GPIO_PinModeSet(gpioPortB, PB0PIN, gpioModeInputPull,HIGH);
 	// PB1: input with pullup R
 	GPIO_PinModeSet(gpioPortB, PB1PIN, gpioModeInputPull,HIGH);
 	// PB0: enable interrupts on falling edge
-	GPIO_IntConfig( gpioPortB, PB0PIN, false, true, true );
+	GPIO_ExtIntConfig( gpioPortB, PB0PIN, PB0PIN, false, true, true );
 	// PB1: enable interrupts on falling edge
-	GPIO_IntConfig( gpioPortB, PB1PIN, false, true, true );
-
-	// IOExpander Interrupt Pin : input with pull R
-	GPIO_PinModeSet(gpioPortC, IOEXPINTPIN, gpioModeInputPull, HIGH);
-
-	//Also enable GPIO interrupts on ARM CPU level
-	// Note:
-	//- PB0 is on an odd pin (9) it triggers thus GPIO_ODD interrupts
-	//- PB1 is on an even pin (10) it triggers thus GPIO_EVEN interrupts
-	// Clear pending interrupts before enabling them
-	NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
-	NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
-	NVIC_EnableIRQ(GPIO_ODD_IRQn);
-	NVIC_EnableIRQ(GPIO_EVEN_IRQn);;
+	GPIO_ExtIntConfig( gpioPortB, PB1PIN, PB0PIN, false, true, true );
 }
 
 //--------------------------------------------------------------------------------------------------
-// SomeGlobalFunction
+// bool GetButtonPB1Flag(void)
 //--------------------------------------------------------------------------------------------------
 //! \brief	A brief explanation of this function's functionality goes here.
 //!
@@ -184,13 +190,13 @@ void initButtons(void)
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
 
-bool GetButtonPB1Flag(void)
+bool getButtonPB1Flag(void)
 {
 	return ButtonPB1Flag;
 }
 
 //--------------------------------------------------------------------------------------------------
-// SomeGlobalFunction
+// bool GetButtonPB0Flag(void)
 //--------------------------------------------------------------------------------------------------
 //! \brief	A brief explanation of this function's functionality goes here.
 //!
@@ -204,9 +210,65 @@ bool GetButtonPB1Flag(void)
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
 
-bool GetButtonPB0Flag(void)
+bool getButtonPB0Flag(void)
 {
 	return ButtonPB0Flag;
+}
+
+//--------------------------------------------------------------------------------------------------
+// void initDSPDetection(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	Setter function for actual state of ButtonPB1.
+//!
+//! This function is used to set the ButtonPB1Flag.
+//! This function is called from the PB1 GPIO Interrupt routine.
+//!
+//! \param	void	input	No input arguments
+//! \return	void	output	No input arguments
+//--------------------------------------------------------------------------------------------------
+void initDSPDetection(void)
+{
+	// PC0/CODEC_RST: input
+	GPIO_PinModeSet(gpioPortC, CODEC_RST_PIN, gpioModeInputPullFilter, LOW);
+	// PC0/CODEC_RST: enable interrupts on rising edge
+	GPIO_ExtIntConfig(gpioPortC, CODEC_RST_PIN, CODEC_RST_PIN, true, true, true);
+}
+
+//--------------------------------------------------------------------------------------------------
+// void initDSPDetection(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	Setter function for actual state of ButtonPB1.
+//!
+//! This function is used to set the ButtonPB1Flag.
+//! This function is called from the PB1 GPIO Interrupt routine.
+//!
+//! \param	void	input	No input arguments
+//! \return	void	output	No input arguments
+//--------------------------------------------------------------------------------------------------
+bool getDSPDetectionFlag(void)
+{
+	return DSPDetectionFlag;
+}
+
+//--------------------------------------------------------------------------------------------------
+// void enableDigitalInterrupts(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	Setter function for actual state of ButtonPB1.
+//!
+//! This function is used to set the ButtonPB1Flag.
+//! This function is called from the PB1 GPIO Interrupt routine.
+//!
+//! \param	void	input	No input arguments
+//! \return	void	output	No input arguments
+//--------------------------------------------------------------------------------------------------
+void enableDigitalInterrupts(void)
+{
+	//Also enable GPIO interrupts on ARM CPU level
+	// Clear pending interrupts before enabling them
+	NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
+	NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
+	NVIC_EnableIRQ(GPIO_ODD_IRQn);
+	NVIC_EnableIRQ(GPIO_EVEN_IRQn);
 }
 
 //==================================================================================================
@@ -224,7 +286,7 @@ bool GetButtonPB0Flag(void)
 //! \param	void	input	No input arguments
 //! \return	void	output	No input arguments
 //--------------------------------------------------------------------------------------------------
-static void SetButtonPB1Flag(void)
+static void setButtonPB1Flag(void)
 {
 	ButtonPB1Flag = true;
 }
@@ -240,7 +302,7 @@ static void SetButtonPB1Flag(void)
 //! \param	void	input	No input arguments
 //! \return	void	output	No input arguments
 //--------------------------------------------------------------------------------------------------
-static void SetButtonPB0Flag(void)
+static void setButtonPB0Flag(void)
 {
 	ButtonPB0Flag = true;
 }
@@ -256,7 +318,7 @@ static void SetButtonPB0Flag(void)
 //! \param	void	input	No input arguments
 //! \return	void	output	No input arguments
 //--------------------------------------------------------------------------------------------------
-static void ResetButtonPB1Flag(void)
+static void resetButtonPB1Flag(void)
 {
 	ButtonPB1Flag = false;
 }
@@ -272,9 +334,41 @@ static void ResetButtonPB1Flag(void)
 //! \param	void	input	No input arguments
 //! \return	void	output	No input arguments
 //--------------------------------------------------------------------------------------------------
-static void ResetButtonPB0Flag(void)
+static void resetButtonPB0Flag(void)
 {
 	ButtonPB0Flag = false;
+}
+
+//--------------------------------------------------------------------------------------------------
+// static void setDSPDetectionFlag(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	Setter function for actual state of DSPDetection.
+//!
+//! This function is used to set the DSPDetectionFlag.
+//! This function is called from the GPIO Interrupt routine.
+//!
+//! \param	void	input	No input arguments
+//! \return	void	output	No input arguments
+//--------------------------------------------------------------------------------------------------
+static void setDSPDetectionFlag(void)
+{
+	DSPDetectionFlag = true;
+}
+
+//--------------------------------------------------------------------------------------------------
+// static void resetDSPDetectionFlag(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	Setter function for actual state of DSPDetection.
+//!
+//! This function is used to set the DSPDetectionFlag.
+//! This function is called from the GPIO Interrupt routine.
+//!
+//! \param	void	input	No input arguments
+//! \return	void	output	No input arguments
+//--------------------------------------------------------------------------------------------------
+static void resetDSPDetectionFlag(void)
+{
+	DSPDetectionFlag = false;
 }
 
 //==================================================================================================
