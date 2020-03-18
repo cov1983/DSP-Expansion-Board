@@ -24,33 +24,30 @@
 //  I N C L U D E D   F I L E S
 //==================================================================================================
 
-#include "em_device.h" 	// Includes the MCU dependent headers based on the project's MCU definition.
-#include "em_chip.h"   	// emlib chip errata.
+#include "em_device.h" 	// Includes the MCU dependent headers based on the project's MCU definition
+#include "em_lcd.h"		// emblib for LCD
 
-#include "clocks.h"		// Include Clocks Module
-#include "buttons.h"	// Include Buttons Module
-#include "i2c.h"		// Include I2C Module
-#include "leds.h"		// Include LEDs Module
-#include "codec.h"		// Include Codec Module
+#include "segmentlcd.h" // Include STK3800 LCD Library
 
+#include "system.h"		// Include System Module
+#include "codec.h"		// Include CODEC Module
 
 //==================================================================================================
 //  M O D U L E   D E F I N E S
 //==================================================================================================
 
-
 //==================================================================================================
 //  M O D U L E   T Y P E S
 //==================================================================================================
-
 
 //==================================================================================================
 //  M O D U L E   V A R I A B L E S
 //==================================================================================================
 
-bool i2cRepeat = false;
-
+bool dspBoardActive = false;
 bool i2cError = false;
+
+bool buttonPB0once = false;
 
 //==================================================================================================
 //  F O R W A R D   D E C L A R A T I O N S
@@ -83,56 +80,88 @@ bool i2cError = false;
 
 int main(void)
 {
-	// Apply chip errata:
-	CHIP_Init();
-	// Initialize Clocks
-	InitClk();
-	// Initialize Push Buttons
-	initButtons();
-	// Initialize LEDs
-	initLEDS();
-	// Initialize I2C
-	initI2C();
+	// STK3800 BASIC SYSTEM INIT
+	initSTK3800_Basic();
 
+
+	// Initialize LCD without boost
+	SegmentLCD_Init(false);
+	// Show welcome message on LCD
+	SegmentLCD_AllOff();
+	SegmentLCD_Write("DSPDemo");
+	Delay(2000);
+
+	// Initialize STK3800
+	initSTK3800_Basic();
+
+
+	// ENTER INFINITE LOOP
 	while (true)
 	{
-		// Check if PB0 Button is activated
-		if (GetButtonPB0Flag())
+
+		if (getDSPDetectionFlag())
 		{
-			// Enable HFRCO Clock on Pin PD7
-			enableMCLK();
+			SegmentLCD_Write("DSP ON");
+			// Call StateMachine
+			// ...
 		}
 		else {
-			// Disable HFRCO Clock on Pin PD7
-			disableMCLK();
+			SegmentLCD_Write("DSP OFF");
 		}
 
-		// Check if PB1 Button is activated
-		if (GetButtonPB1Flag())
+
+
+
+
+
+
+		// Check if PB0 Button is activated
+		/*
+		if (getButtonPB0Flag() && (!buttonPB0once))
 		{
 			// Enable LED0
 			enableLED0();
 
-			//I2c Test Transfer
-			if (!i2cRepeat)
-			{
-				// CODEC Configuration Test Block
-				i2cError = initCODEC();
+			// CODEC SETUP LINE IN TO HP OUT AT FS = 48Khz
+			// CODEC Base Initialization (LDO Power)
+			i2cError = initCODEC();
+			// CODEC PLL & Clocks Initialization
+			i2cError = setSampling48CODEC();
+			// CODEC Configure Processing Blocks
+			i2cError = setProcessingBlocksCODEC();
+			// CODEC DAC Routing & Power Up
+			i2cError = setDacHPCODEC();
+			Delay(100);
+			// CODEC ADC Routing & Power Up
+			i2cError = setAdcIN2CODEC();
+			// CODEC Set Default Digital Gain ADC L&R 0dB
+			i2cError = setAdcDigitalGainCODEC();
 
-				// Set Repeat Flag
-				i2cRepeat = true;
-			}
+			// Set flag for ButtonPB0 pressed once
+			buttonPB0once = true;
 		}
 		else {
 			// Disable LED0
 			disableLED0();
-			// Reset i2cRepeat Flag, with the next press of PB1 a new transfer will start
-			i2cRepeat = false;
 		}
-	}
 
+		// Check if PB1 Button is activated
+		if (getButtonPB1Flag())
+		{
+			// Enable LED1
+			enableLED1();
+		}
+		else {
+
+			// Disable LED1
+			disableLED1();
+		}
+		*/
+	}
 	return (0);
 }
+
+
 
 
 //==================================================================================================
