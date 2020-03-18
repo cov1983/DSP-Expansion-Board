@@ -65,8 +65,14 @@ extern "C" {
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
 bool initCODEC(void);
+bool pingCODEC(void);
+bool setSampling48CODEC(void);
+bool setProcessingBlocksCODEC(void);
+bool setDacHPCODEC(void);
+bool setAdcIN2CODEC(void);
+bool setAdcDigitalGainCODEC(void);
 
-
+bool enableCodecLINtoHPplayback(void);
 
 #ifdef __cplusplus
 }
