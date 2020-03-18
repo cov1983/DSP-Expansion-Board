@@ -25,6 +25,7 @@
 //==================================================================================================
 
 #include "i2s.h"
+#include "processing.h"
 
 //==================================================================================================
 //  M O D U L E   D E F I N E S
@@ -42,11 +43,6 @@
 #define I2S_USART_WSPORT        gpioPortD						// USART_WS => PortD3
 #define I2S_USART_WSPIN         3
 
-#define RX_BUFFER_SIZE   		10
-#define TX_BUFFER_SIZE   		RX_BUFFER_SIZE
-
-#define I2S_CLK_FREQ			1536000							// I2S CLK at Fs = 48Khz
-
 //==================================================================================================
 //  M O D U L E   T Y P E S
 //==================================================================================================
@@ -56,11 +52,8 @@
 //  M O D U L E   V A R I A B L E S
 //==================================================================================================
 
-uint16_t RxBuffer[RX_BUFFER_SIZE];
-uint16_t RxBufferIndex = 0;
-
-uint8_t TxBuffer[TX_BUFFER_SIZE] = {0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9};
-uint8_t TxBufferIndex = 0;
+static AudioSample audioSampleIN;
+static AudioSample audioSampleOUT;
 
 //==================================================================================================
 //  M O D U L E   F U N C T I O N   P R O T O T Y P E S
@@ -82,20 +75,6 @@ uint8_t TxBufferIndex = 0;
 //--------------------------------------------------------------------------------------------------
 void USART1_RX_IRQHandler()
 {
-	// Read data
-	RxBuffer[RxBufferIndex] = USART_RxDataGet(USART1);
-	RxBufferIndex++;
-
-	if (RxBufferIndex == RX_BUFFER_SIZE)
-	{
-	// Putting a break point here to view the full RxBuffer,
-	RxBufferIndex = 0;
-	}
-
-
-	/* I2S RX TEST
-	uint16_t i2s_sampleIn_L, i2s_sampleIn_R;
-
 	// Check whether RX Data Valid Interrupt is active
 	if(USART1->IF & (USART_IF_RXFULL))
 	{
@@ -106,16 +85,16 @@ void USART1_RX_IRQHandler()
 		if(USART1->STATUS & (USART_STATUS_RXDATAVRIGHT))
 		{
 			// Get Right Sample from USART1/I2S RX Buffer
-			i2s_sampleIn_R = (uint16_t)(USART1->RXDOUBLE);
+			audioSampleIN.right = (uint16_t)((USART1->RXDOUBLE) & 0xFFFF);
 		}
 		else {
 
 			// Get Left Sample from USART1/I2S RX Buffer
-			i2s_sampleIn_L = (uint16_t)(USART1->RXDOUBLE);
-
+			audioSampleIN.left = (uint16_t)((USART1->RXDOUBLE) & 0xFFFF);
 		}
+		// Call processing function here & get samples back
+		audioSampleOUT = bypass(audioSampleIN);
 	}
-	*/
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -129,15 +108,15 @@ void USART1_RX_IRQHandler()
 //--------------------------------------------------------------------------------------------------
 void USART1_TX_IRQHandler(void)
 {
-  // Send and receive incoming data
-  USART1->TXDATA = (uint32_t)TxBuffer[TxBufferIndex];
-  TxBufferIndex++;
 
-  // Stop sending once we've gone through the whole TxBuffer
-  if (TxBufferIndex == TX_BUFFER_SIZE)
+  if(USART1->STATUS & (USART_STATUS_TXBDRIGHT))
   {
-    TxBufferIndex = 0;
+	  USART1->TXDOUBLE = (uint32_t)(audioSampleOUT.right);
   }
+  else {
+	  USART1->TXDOUBLE = (uint32_t)(audioSampleOUT.left);
+  }
+
 }
 
 //==================================================================================================
@@ -171,11 +150,11 @@ void initI2S(void)
   /* Configure USART for I2S slave. */
   init.sync.enable = usartEnable;
   init.sync.master = false;
-  init.sync.baudrate = I2S_CLK_FREQ;
   init.mono = false;
   init.format = SPK_I2S_FORMAT;
-  //init.dmaSplit = false;
 
+  // Enable USART1 configured as I2S above
+   USART_InitI2s(I2S_USART_UART, &init);
 
   /* Enable pins at location. */
   I2S_USART_UART->ROUTE = USART_ROUTE_TXPEN
@@ -184,25 +163,6 @@ void initI2S(void)
                         | USART_ROUTE_CLKPEN
                         | I2S_USART_LOCATION;
 
-
-  /* Set USART CTRL Register */
-  I2S_USART_UART->CTRL 	= USART_CTRL_SYNC						// USART SYNC MODE
-		  	  	  	 	| USART_CTRL_CLKPHA_SAMPLETRAILING		// DATA SAMPLED ON CLK FALLING EDGE
-						| USART_CTRL_MSBF						// DATA MSB FIRST
-						| USART_CTRL_TXBIL_HALFFULL
-						| USART_CTRL_CSINV;
-
-  /* Set USART CMD Register */
-  USART1->CMD |= USART_CMD_RXEN;
-
-
-  // Clear RX Buffer and Shift Register
-  USART1->CMD |= USART_CMD_CLEARRX;
-
-  // Enable USART1 configured as I2S above
-  USART_InitI2s(I2S_USART_UART, &init);
-
-
   // Enable USART1 RX Interrupts
   USART_IntClear(USART1, USART_IF_RXDATAV);
   USART_IntEnable(USART1, USART_IF_RXDATAV);
@@ -210,17 +170,13 @@ void initI2S(void)
   NVIC_EnableIRQ(USART1_RX_IRQn);
 
   // Enable USART1 TX Interrupts
-  // there is room in the transmit buffer
-  // This should immediately trigger to load the first byte of our TX buffer
-  /*
+  // If there is room in the transmit buffer
+  // This should immediately trigger to load the first frame of TX buffer
   USART_IntClear(USART1, USART_IF_TXBL);
   USART_IntEnable(USART1, USART_IF_TXBL);
   NVIC_ClearPendingIRQ(USART1_TX_IRQn);
   NVIC_EnableIRQ(USART1_TX_IRQn);
-  */
-
 }
-
 
 //==================================================================================================
 //  M O D U L E   F U N C T I O N   I M P L E M E N T A T I O N
