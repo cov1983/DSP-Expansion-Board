@@ -64,7 +64,7 @@
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initLEDS(void)
+void initSTK3800Leds(void)
 {
 	// Configure LED0 as PushPull Output
 	GPIO_PinModeSet(gpioPortE, LED0, gpioModePushPull, 0);

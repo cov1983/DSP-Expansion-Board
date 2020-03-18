@@ -48,7 +48,7 @@ extern "C" {
 //==================================================================================================
 //  G L O B A L   F U N C T I O N   D E C L A R A T I O N
 //==================================================================================================
-void initLEDS(void);
+void initSTK3800Leds(void);
 void enableLED0(void);
 void enableLED1(void);
 void disableLED0(void);
