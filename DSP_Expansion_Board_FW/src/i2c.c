@@ -152,13 +152,14 @@ void initI2C(void)
   i2c_startTx = false;
   i2c_rxBufferIndex = 0;
 
-  // Setting up to enable slave mode
-  // NOT ACTIVE
-  /*
-  I2C1->SADDR = I2C_IOEXP_ADDR;
-  I2C1->CTRL |= I2C_CTRL_SLAVE | I2C_CTRL_AUTOACK | I2C_CTRL_AUTOSN;
-  enableI2cSlaveInterrupts();
-  */
+  /* Setting up to enable slave mode
+   *
+   * NOT ACTIVE !!
+   *
+   I2C1->SADDR = I2C_IOEXP_ADDR;
+   I2C1->CTRL |= I2C_CTRL_SLAVE | I2C_CTRL_AUTOACK | I2C_CTRL_AUTOSN;
+   enableI2cSlaveInterrupts();
+   */
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -201,8 +202,6 @@ void performI2CTransfer(void)
 
   // Clearing LED1 to indicate end of transfer
   disableLED1();
-  // NOT USED NOW -> JUST TRANSFER TEST !
-  //enableI2cSlaveInterrupts();
 }
 
 //--------------------------------------------------------------------------------------------------
