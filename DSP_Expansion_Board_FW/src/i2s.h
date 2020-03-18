@@ -72,7 +72,8 @@ typedef struct AudioSamples {
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initI2S(void);
+void enableI2S(void);
+void disableI2S(void);
 
 
 #ifdef __cplusplus

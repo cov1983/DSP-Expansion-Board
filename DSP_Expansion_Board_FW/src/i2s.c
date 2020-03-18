@@ -51,14 +51,14 @@
 //==================================================================================================
 //  M O D U L E   V A R I A B L E S
 //==================================================================================================
-
 static AudioSample audioSampleIN;
 static AudioSample audioSampleOUT;
 
 //==================================================================================================
 //  M O D U L E   F U N C T I O N   P R O T O T Y P E S
 //==================================================================================================
-
+static void enableUSARTinterrupts(void);
+static void disableUSARTinterrupts(void);
 
 //==================================================================================================
 //  I R Q   H A N D L E R S
@@ -137,7 +137,7 @@ void USART1_TX_IRQHandler(void)
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void initI2S(void)
+void enableI2S(void)
 {
   USART_InitI2s_TypeDef init = USART_INITI2S_DEFAULT;
 
@@ -163,19 +163,37 @@ void initI2S(void)
                         | USART_ROUTE_CLKPEN
                         | I2S_USART_LOCATION;
 
-  // Enable USART1 RX Interrupts
-  USART_IntClear(USART1, USART_IF_RXDATAV);
-  USART_IntEnable(USART1, USART_IF_RXDATAV);
-  NVIC_ClearPendingIRQ(USART1_RX_IRQn);
-  NVIC_EnableIRQ(USART1_RX_IRQn);
+  // Enable USART RX and TX Interrupts
+  enableUSARTinterrupts();
+}
 
-  // Enable USART1 TX Interrupts
-  // If there is room in the transmit buffer
-  // This should immediately trigger to load the first frame of TX buffer
-  USART_IntClear(USART1, USART_IF_TXBL);
-  USART_IntEnable(USART1, USART_IF_TXBL);
-  NVIC_ClearPendingIRQ(USART1_TX_IRQn);
-  NVIC_EnableIRQ(USART1_TX_IRQn);
+//--------------------------------------------------------------------------------------------------
+// SomeGlobalFunction
+//--------------------------------------------------------------------------------------------------
+//! \brief	A brief explanation of this function's functionality goes here.
+//!
+//! A more detailed explanation of this function's functionality goes here,
+//! which may go over several lines.
+//!
+//! \param	someInt		input	Description of parameter someInt
+//! \param	someDouble	input	Description of parameter someDouble
+//! \return	Description of the return value
+//! 		-  0 = Nothing
+//! 		- >0 = Number of something
+//--------------------------------------------------------------------------------------------------
+void disableI2S(void)
+{
+	// Disable USART Interrupts
+	disableUSARTinterrupts();
+
+	// Disable USART Interface
+	USART_Enable(I2S_USART_UART, usartDisable);
+
+	// Disable USART Pins
+	GPIO_PinModeSet(I2S_USART_TXPORT, I2S_USART_TXPIN, gpioModeDisabled, 0);
+	GPIO_PinModeSet(I2S_USART_RXPORT, I2S_USART_RXPIN, gpioModeDisabled, 0);
+	GPIO_PinModeSet(I2S_USART_CLKPORT, I2S_USART_CLKPIN, gpioModeDisabled, 0);
+	GPIO_PinModeSet(I2S_USART_WSPORT, I2S_USART_WSPIN, gpioModeDisabled, 0);
 }
 
 //==================================================================================================
@@ -183,7 +201,7 @@ void initI2S(void)
 //==================================================================================================
 
 //--------------------------------------------------------------------------------------------------
-// static someModuleFunction(void)
+// static void enableIntUSART(void)
 //--------------------------------------------------------------------------------------------------
 //! \brief	Setter function for actual state of ButtonPB1.
 //!
@@ -193,7 +211,48 @@ void initI2S(void)
 //! \param	void	input	No input arguments
 //! \return	void	output	No input arguments
 //--------------------------------------------------------------------------------------------------
+static void enableUSARTinterrupts(void)
+{
+	// Enable USART1 RX Interrupts
+	USART_IntClear(USART1, USART_IF_RXDATAV);
+	USART_IntEnable(USART1, USART_IF_RXDATAV);
+	NVIC_ClearPendingIRQ(USART1_RX_IRQn);
+	NVIC_EnableIRQ(USART1_RX_IRQn);
 
+	// Enable USART1 TX Interrupts
+	// If there is room in the transmit buffer
+	// This should immediately trigger to load the first frame of TX buffer
+	USART_IntClear(USART1, USART_IF_TXBL);
+	USART_IntEnable(USART1, USART_IF_TXBL);
+	NVIC_ClearPendingIRQ(USART1_TX_IRQn);
+	NVIC_EnableIRQ(USART1_TX_IRQn);
+}
+
+//--------------------------------------------------------------------------------------------------
+// static void enableIntUSART(void)
+//--------------------------------------------------------------------------------------------------
+//! \brief	Setter function for actual state of ButtonPB1.
+//!
+//! This function is used to set the ButtonPB1Flag.
+//! This function is called from the PB1 GPIO Interrupt routine.
+//!
+//! \param	void	input	No input arguments
+//! \return	void	output	No input arguments
+//--------------------------------------------------------------------------------------------------
+static void disableUSARTinterrupts(void)
+{
+	// Disable USART1 RX Interrupts
+	USART_IntClear(USART1, USART_IF_RXDATAV);
+	USART_IntDisable(USART1, USART_IF_RXDATAV);
+	NVIC_ClearPendingIRQ(USART1_RX_IRQn);
+	NVIC_DisableIRQ(USART1_RX_IRQn);
+
+	// Disable USART1 TX Interrupts
+	USART_IntClear(USART1, USART_IF_TXBL);
+	USART_IntDisable(USART1, USART_IF_TXBL);
+	NVIC_ClearPendingIRQ(USART1_TX_IRQn);
+	NVIC_DisableIRQ(USART1_TX_IRQn);
+}
 
 //==================================================================================================
 //  E N D   O F   F I L E
