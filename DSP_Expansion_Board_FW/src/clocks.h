@@ -76,7 +76,7 @@ typedef enum {
 //! 		-  0 = Nothing
 //! 		- >0 = Number of something
 //--------------------------------------------------------------------------------------------------
-void InitClk(void);
+void initClk(void);
 
 void enableMCLK(void);
 void disableMCLK(void);

@@ -70,7 +70,7 @@ static int AssertErrorLine;
 //! \param	void		input	No input arguments
 //! \return	void		output	No output arguments
 //--------------------------------------------------------------------------------------------------
-void InitClk(void)
+void initClk(void)
 {
 	// Activate HFXO and use it as HF clock source
 	// Enable and start crystal oscillator
